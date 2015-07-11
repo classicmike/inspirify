@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <title>Inspirify by Mike Tran &lt;frontend&gt;&lt;&#47;developer&gt;</title>
+
+    <link href='https://www.google.com/fonts#UsePlace:use/Collection:Montserrat:400,700|Open+Sans:400,700' rel='stylesheet' type='text/css'>    <!-- Bootstrap -->
+    <link href="css/bootstrap.min.css" rel="stylesheet" />
+    <link href="css/style.css" rel="stylesheet" />
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+    <script src="//oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+    <script src="//oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <header class="col-xs-12">
+                <div class="logo-container">
+                    <h1 class="logo">Inspirify</h1>
+                </div>
+                <nav>
+                    <ul>
+                        <li><a href="#insire-me">Insprire Me</a></li>
+                        <li><a href="#about">About</a></li>
+                        <li><a href="https://classicmike.github.io/portfolio">Need Services?</a></li>
+                    </ul>
+                </nav>
+            </header>
+        </div>
+    </div>
+
+    <section class="afeature afeature__search text-center">
+        <div class="container">
+            <div class="row">
+                <div class="col-xs-12">
+                    <div class="afeature__content vertical-align vertical-align__middle">
+                        <div class="vertical-align__middle__alignment-block">
+                            <hgroup class="afeature__header">
+                                <h2>Sick of listening to the same favourite artists everyday?</h2>
+                                <h3 class="h2">Surprise Yourself and start searching!</h3>
+                            </hgroup>
+                            <form id="artist-search" method="get" class="afeature__search">
+                                <div class="row">
+                                    <div class="col-xs-12 col-sm-9 col-md-6 col-lg-4 center-block overrides__no-float">
+                                        <div class="form-group">
+                                            <input placeholder="Who's your favourite artist?" type="text" class="form-control afeature__search__input" name="artist-search" />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-12 afeature__actions">
+                                        <button type="submit" class="btn btn-primary afeature__search__submit">
+                                            <span class="glyphicon glyphicon-menu-down"></span> Inspire Me
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="results" class="section backgrounds__solid-color__light-grey text-center">
+        <div class="container">
+            <div class="row">
+                <div class="col-xs-12">
+                    <p id="loading-text" class="lead">Hold Your Horses! Use the Search Bar above to get an inspired artist here</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <article id="about" class="section">
+        <div class="container">
+            <div class="row">
+                <div class="col-xs-12 section__header text-center">
+                    <h2 class="typography__text__dark-green h1">About the This App</h2>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-12 section__content">
+                    <p class="lead text-center">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed enim ipsum,
+                        aliquet sed consectetur tincidunt, lobortis eget quam. </p>
+
+                    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed enim ipsum, aliquet sed consectetur
+                        tincidunt, lobortis eget quam. Mauris quam orci, accumsan vitae ipsum maximus, accumsan viverra
+                        tortor. Sed non mauris metus. Pellentesque ullamcorper sapien orci, ut ullamcorper justo
+                        convallis eget. Sed viverra quam at sapien facilisis, facilisis cursus felis bibendum. Proin
+                        blandit odio egestas sapien aliquam, sit amet dictum lorem eleifend. Etiam id ullamcorper augue,
+                        ac varius ante. Fusce quis tristique felis, ut interdum orci. Curabitur malesuada dui non nisi
+                        sollicitudin ornare. Cras tortor tellus, facilisis et nibh et, dapibus facilisis elit.</p>
+
+                    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed enim ipsum, aliquet sed consectetur
+                        tincidunt, lobortis eget quam. Mauris quam orci, accumsan vitae ipsum maximus, accumsan viverra
+                        tortor. Sed non mauris metus. Pellentesque ullamcorper sapien orci, ut ullamcorper justo
+                        convallis eget. Sed viverra quam at sapien facilisis, facilisis cursus felis bibendum. Proin
+                        blandit odio egestas sapien aliquam, sit amet dictum lorem eleifend. Etiam id ullamcorper augue,
+                        ac varius ante. Fusce quis tristique felis, ut interdum orci. Curabitur malesuada dui non nisi
+                        sollicitudin ornare. Cras tortor tellus, facilisis et nibh et, dapibus facilisis elit.</p>
+                </div>
+            </div>
+        </div>
+    </article>
+
+
+
+    <footer class="site-footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-xs-12">
+                    <p class="copyright">&copy; 2015 Mike Tran <span class="typography-highlight">&lt;frontend&gt;&lt;&#47;developer&gt;</span></p>
+                    <p>All artists and songs have been obtained through the Spotify API, which has made available by Spotify. I will not be held responsible for any copyright issues that arise from displaying it on the site.
+                        If you have any issues with the songs, please contact Spotify.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+<!-- Include all compiled plugins (below), or include individual files as needed -->
+<script src="js/bootstrap.min.js"></script>
+
+</body>
+</html>
