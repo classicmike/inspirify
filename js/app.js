@@ -4,6 +4,7 @@
     //possibly required echo nest
     //required spotify
 
+    /***--------- SONG Model ------------ ***/
     app.Song = function(){
 
     };
@@ -17,8 +18,9 @@
     };
 
     app.Song.id = 0;
+    /***--------- SONG Model ------------ ***/
 
-
+    /***--------- ARTIST Model ------------ ***/
     app.Artist = function(name, imageUrl){
         if(!name){
             return;
@@ -29,10 +31,10 @@
 
     app.Artist.prototype.setup = function(name, imageUrl){
         this.name = name;
+        this.imageUrl = imageUrl || 'http://placehold.it/640x643';
         this.biography = '';
         this.genres = [];
         this.songs = [];
-        this.imageUrl = imageUrl || 'http://placehold.it/640x643';
     };
 
     app.Artist.prototype.addSongs = function(songsJSON){
@@ -40,6 +42,8 @@
             var song = new app.Song(songsJSON[i]);
         }
     };
+    /***--------- ARTIST Model ------------ ***/
+
 
     /***--------- ARTIST LIST Collection ------------ ***/
     //@todo: Refactor this to use a static function creating a constructor.
@@ -171,8 +175,7 @@
     app.SearchResultsController.prototype.processSearchResults = function(artistsList){
         this.artistsList = artistsList;
 
-        console.log('Has Results');
-        console.log(artistsList);
+        this.view.showResults(this.artistsList.artists);
     };
 
     app.SearchResultsController.prototype.processSearchError = function(results, error, JXHR){
@@ -205,8 +208,6 @@
     app.SearchBoxView.prototype.setup = function(controller){
         this.searchBoxElement = $(app.SearchBoxView.ELEMENT_ID);
         this.controller = controller;
-
-        console.log(this.controller);
 
         this.controller.view = this;
     };
@@ -260,6 +261,8 @@
         this.defaultTextElement = $(app.SearchResultsView.DEFAULT_TEXT_ID);
         this.loadingTextElement = $(app.SearchResultsView.LOADING_TEXT_ID);
         this.noResultsTextElement = $(app.SearchResultsView.NO_RESULTS_TEXT_ID);
+        this.searchItemsListElement = $(app.SearchResultsView.SEARCH_ITEMS_LIST_ID);
+        this.searchResultItemElement = $(app.SearchResultsView.SEARCH_ITEM_ELEMENT_ID);
 
         this.controller.view = this;
         this.showDefaultText();
@@ -267,7 +270,13 @@
 
 
     app.SearchResultsView.prototype.setEvents = function(){
+        this.resultsContentElement.on('click', '.search-result-item', this.openModal.bind(this));
+    };
 
+    app.SearchResultsView.prototype.openModal = function(event){
+        event.preventDefault();
+
+        console.log('Need to create functionality to open a modal window with the artist information');
     };
 
     app.SearchResultsView.prototype.showDefaultText = function(){
@@ -282,6 +291,27 @@
         this.resultsContentElement.html(ejs.render(this.noResultsTextElement.html()));
     };
 
+    app.SearchResultsView.prototype.showResults = function(results){
+        if(!results){
+            return;
+        }
+        //keep a variable of the search results.
+        var listElement = ejs.render(this.searchItemsListElement.html());
+
+        console.log('Let Us render all items');
+        for(var i = 0; i < results.length; i++){
+            var result = results[i];
+
+            var listItemElement = ejs.render(this.searchResultItemElement.html(), { artist: result });
+            console.log(listItemElement);
+            listElement.append(listItemElement);
+
+        }
+
+        //add this to the results content
+        this.resultsContentElement.html(listElement);
+    };
+
     app.SearchResultsView.prototype.notifyFatalError = function(){
         alert('Woops there seems to be a problem during the process with searching for your inspiration. Please try again or if problems persists, please contact me.');
     };
@@ -290,6 +320,8 @@
     app.SearchResultsView.LOADING_TEXT_ID = '#loading-text';
     app.SearchResultsView.DEFAULT_TEXT_ID = '#default-text';
     app.SearchResultsView.NO_RESULTS_TEXT_ID = '#no-results-text';
+    app.SearchResultsView.SEARCH_ITEMS_LIST_ID = '#search-items-list';
+    app.SearchResultsView.SEARCH_ITEM_ELEMENT_ID = '#search-result-item';
 
     /***--------- SEARCH RESULTS VIEW ------------ ***/
 

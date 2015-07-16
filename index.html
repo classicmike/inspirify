@@ -127,13 +127,22 @@
 
 
     <script id="search-items-list" type="text/ejs">
-        <ul class="block-grid-xs-1 block-grid-xm-2 block-grid-md-4">
+        <ul class="search-results block-grid-xs-1 block-grid-xm-2 block-grid-md-4">
 
         </ul>
     </script>
 
-    <script id="search-items-list-item" type="text/ejs">
-
+    <script id="search-result-item" type="text/ejs">
+        <li class="search-result-item">
+            <a href="#" class="search-result-item">
+                <figure class="well">
+                    <img src="<%= artist.imageUrl %>" alt="Click to find out more about <%= artist.name %>" class="img-responsive" />
+                    <figcaption>
+                        <%= artist.name %>
+                    </figcaption>
+                </figure>
+            </a>
+        </li>
     </script>
 
     <script id="loading-text" type="text/ejs">
