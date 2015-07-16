@@ -18,15 +18,21 @@
 
     app.Song.id = 0;
 
-    app.Artist = function(){
 
+    app.Artist = function(name, imageUrl){
+        if(!name){
+            return;
+        }
+
+        this.setup(name, imageUrl);
     };
 
-    app.Artist.prototype.setup = function(name, biography, songs, genres){
+    app.Artist.prototype.setup = function(name, imageUrl){
         this.name = name;
-        this.biography = biography;
-        this.songs = songs;
-        this.genres = genres;
+        this.biography = '';
+        this.genres = [];
+        this.songs = [];
+        this.imageUrl = imageUrl || 'http://placehold.it/640x643';
     };
 
     app.Artist.prototype.addSongs = function(songsJSON){
@@ -44,10 +50,8 @@
 
     app.ArtistsList.prototype.setup = function(items){
         if(!items){
-            console.log('No Items');
             this.resetResults();
         } else {
-            console.log('Has Items');
             this.artists = items;
         }
     };
@@ -68,19 +72,11 @@
     };
 
 
-    app.ArtistsList.processArtistResult = function(results, error, variableb){
-        console.log(results);
-        if(!results || results.artists.items.length === 0){
-            return $.Deferred().reject(results, 'No results found');
+    app.ArtistsList.processArtistResult = function(results, error, jQXHR){
+
+        if(!results || !results.artists.items.length){
+            return $.Deferred().reject(results, 'No Results', jQXHR);
         }
-
-        if(error){
-            console.log('Apparently there is an error');
-            console.log(error);
-        }
-        console.log(variableb);
-
-
 
         //the top one is assumed to be the most related result
         var mostRelevantArtist = results.artists.items[0];
@@ -90,19 +86,30 @@
         return $.get(url);
     };
 
-    app.ArtistsList.processRelatedArtistResults = function(relatedResults){
-        if(!relatedResults || !relatedResults.artists){
-            return new app.ArtistsList();
-        } else {
-            var artists = relatedResults.artists;
-            return new app.ArtistsList(artists);
+    app.ArtistsList.processRelatedArtistResults = function(relatedResults, error, jQXHR){
+        if(!relatedResults || !relatedResults.artists.length){
+            return $.Deferred().reject(relatedResults, 'No Results', jQXHR);
         }
+
+        var artists = relatedResults.artists;
+        var artistsInstances = [];
+
+        //need to loop through the results and create new instance of the artist.
+        for(var i = 0; i < artists.length; i ++){
+            var relatedArtist = artists[i];
+
+            artistsInstances.push(new app.Artist(relatedArtist.name, relatedArtist.images[0].url));
+        }
+
+        return new app.ArtistsList(artistsInstances);
+
     };
 
     app.ArtistsList.SEARCH_URL = 'https://api.spotify.com/v1/search';
     app.ArtistsList.RELATED_SEARCH_URL = 'https://api.spotify.com/v1/artists/{id}/related-artists';
     app.ArtistsList.ARTIST_PARAMETER_NAME = 'artist';
     app.ArtistsList.RELATED_ARTIST_LIMIT = 6;
+    app.ArtistsList.IMAGE_URL_KEY = 1;
 
     /***--------- ARTIST LIST Collection ------------ ***/
 
@@ -130,7 +137,6 @@
     };
 
     app.SearchBoxController.prototype.processSearchSubmit = function(searchTerms){
-        console.log(searchTerms);
         //fire off an event handler that will allow you to search
         this.eventEmitters.emitEvent('search-artist', [searchTerms]);
     };
@@ -158,27 +164,24 @@
 
     app.SearchResultsController.prototype.searchArtist = function(searchTerms){
         //this.view.showLoadingText();
-        app.ArtistsList.performSearch(searchTerms).then(this.processSearchResults.bind(this)).fail(function(results, error){
-            console.log('Error');
-            console.log(results);
-            console.log(error);
-        });
+        app.ArtistsList.performSearch(searchTerms).then(this.processSearchResults.bind(this))
+            .fail(this.processSearchError.bind(this));
     };
-
 
     app.SearchResultsController.prototype.processSearchResults = function(artistsList){
         this.artistsList = artistsList;
 
-        if(!this.artistsList.artists.length || this.artistsList.artists.length === 0){
-            console.log('trigger functionality to show no results');
-        } else {
-            //change the view to output the view
-            console.log('has results');
-        }
+        console.log('Has Results');
+        console.log(artistsList);
     };
 
-    app.SearchResultsController.prototype.processSearchError = function(){
-
+    app.SearchResultsController.prototype.processSearchError = function(results, error, JXHR){
+        // if no results
+        if(error === 'No Results'){
+            this.view.showNoResults();
+        } else {
+            this.view.notifyFatalError();
+        }
     };
 
 
@@ -222,14 +225,16 @@
 
         //search terms need to be entered to proceed with the submit
         if(searchTerms.length === 0 || typeof searchTerms.length === 'undefined' ){
-            alert('No Search Terms have been entered aborting...');
+            this.notifyNoInput();
             return false;
         }
 
-
-
         this.controller.processSearchSubmit(searchTerms);
 
+    };
+
+    app.SearchBoxView.prototype.notifyNoInput = function(){
+        alert('No Search Terms have been entered aborting...');
     };
 
 
@@ -252,6 +257,9 @@
     app.SearchResultsView.prototype.setup = function(controller){
         this.controller = controller;
         this.resultsContentElement = $(app.SearchResultsView.RESULTS_CONTENT_ID);
+        this.defaultTextElement = $(app.SearchResultsView.DEFAULT_TEXT_ID);
+        this.loadingTextElement = $(app.SearchResultsView.LOADING_TEXT_ID);
+        this.noResultsTextElement = $(app.SearchResultsView.NO_RESULTS_TEXT_ID);
 
         this.controller.view = this;
         this.showDefaultText();
@@ -263,16 +271,25 @@
     };
 
     app.SearchResultsView.prototype.showDefaultText = function(){
-        this.resultsContentElement.html(ejs.render($(app.SearchResultsView.DEFAULT_TEXT_ID).html()));
+        this.resultsContentElement.html(ejs.render(this.defaultTextElement.html()));
     };
 
     app.SearchResultsView.prototype.showLoadingText = function(){
-        this.resultsContentElement.html(ejs.render($(app.SearchResultsView.LOADING_TEXT_ID).html()));
+        this.resultsContentElement.html(ejs.render(this.loadingTextElement.html()));
+    };
+
+    app.SearchResultsView.prototype.showNoResults = function(){
+        this.resultsContentElement.html(ejs.render(this.noResultsTextElement.html()));
+    };
+
+    app.SearchResultsView.prototype.notifyFatalError = function(){
+        alert('Woops there seems to be a problem during the process with searching for your inspiration. Please try again or if problems persists, please contact me.');
     };
 
     app.SearchResultsView.RESULTS_CONTENT_ID = '#results-content';
     app.SearchResultsView.LOADING_TEXT_ID = '#loading-text';
     app.SearchResultsView.DEFAULT_TEXT_ID = '#default-text';
+    app.SearchResultsView.NO_RESULTS_TEXT_ID = '#no-results-text';
 
     /***--------- SEARCH RESULTS VIEW ------------ ***/
 
