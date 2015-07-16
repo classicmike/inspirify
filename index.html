@@ -73,8 +73,7 @@
     <section id="results" class="section backgrounds__solid-color__light-grey text-center">
         <div class="container">
             <div class="row">
-                <div class="col-xs-12">
-                    <p id="loading-text" class="lead">Hold Your Horses! Use the Search Bar above to get an inspired artist here</p>
+                <div class="col-xs-12" id="results-content">
                 </div>
             </div>
         </div>
@@ -131,8 +130,17 @@
 
     </script>
 
+    <script id="loading-text" type="text/ejs">
+        <p class="lead">Getting your inspirations for you....</p>
+    </script>
+
+    <script id="default-text" type="text/ejs">
+        <p class="lead">Hold Your Horses! Use the Search Bar above to get an inspired artist here</p>
+    </script>
+
 
 <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="js/ejs.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/EventEmitter/4.2.11/EventEmitter.js"></script>
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
     <!-- Include all compiled plugins (below), or include individual files as needed -->

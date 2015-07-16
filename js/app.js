@@ -18,9 +18,6 @@
 
     app.Song.id = 0;
 
-
-
-
     app.Artist = function(){
 
     };
@@ -40,13 +37,19 @@
 
     /***--------- ARTIST LIST Collection ------------ ***/
     //@todo: Refactor this to use a static function creating a constructor.
-    app.ArtistsList = function(){
-        this.setup();
+    app.ArtistsList = function(items){
+        this.setup(items);
         this.setEvents();
     };
 
-    app.ArtistsList.prototype.setup = function(){
-        this.resetResults();
+    app.ArtistsList.prototype.setup = function(items){
+        if(!items){
+            console.log('No Items');
+            this.resetResults();
+        } else {
+            console.log('Has Items');
+            this.artists = items;
+        }
     };
 
     app.ArtistsList.prototype.resetResults = function(){
@@ -59,27 +62,41 @@
 
 
     app.ArtistsList.performSearch = function(query){
-        return $.get(app.ArtistsList.SEARCH_URL, {q: query, type: app.ArtistsList.ARTIST_PARAMETER_NAME, limit: 1});
+        return $.get(app.ArtistsList.SEARCH_URL, {q: query, type: app.ArtistsList.ARTIST_PARAMETER_NAME, limit: 1})
+            .then(app.ArtistsList.processArtistResult.bind(null))
+            .then(app.ArtistsList.processRelatedArtistResults.bind(null));
     };
 
 
-    app.ArtistsList.processArtistResult = function(results){
-
-        if(!results.artists.items.length){
-            console.log('Provide a way to return no results');
+    app.ArtistsList.processArtistResult = function(results, error, variableb){
+        console.log(results);
+        if(!results || results.artists.items.length === 0){
+            return $.Deferred().reject(results, 'No results found');
         }
+
+        if(error){
+            console.log('Apparently there is an error');
+            console.log(error);
+        }
+        console.log(variableb);
+
+
+
         //the top one is assumed to be the most related result
         var mostRelevantArtist = results.artists.items[0];
 
         var url = app.ArtistsList.RELATED_SEARCH_URL.replace('{id}', mostRelevantArtist.id.toString());
 
-        $.get(url).done(this.processRelatedArtistResults.bind(this));
-
+        return $.get(url);
     };
 
-    app.ArtistsList.prototype.processRelatedArtistResults = function(relatedResults){
-        console.log('Got the related results');
-        console.log(relatedResults);
+    app.ArtistsList.processRelatedArtistResults = function(relatedResults){
+        if(!relatedResults || !relatedResults.artists){
+            return new app.ArtistsList();
+        } else {
+            var artists = relatedResults.artists;
+            return new app.ArtistsList(artists);
+        }
     };
 
     app.ArtistsList.SEARCH_URL = 'https://api.spotify.com/v1/search';
@@ -93,18 +110,18 @@
 
 
     /***--------- SEARCH BOX Controller ------------ ***/
-    app.SearchBoxController = function(eventEmmitter){
+    app.SearchBoxController = function(eventEmitters){
 
-        if(!eventEmmitter){
+        if(!eventEmitters){
             return;
         }
-        this.setup(eventEmitter);
+        this.setup(eventEmitters);
         this.setEvents();
     };
 
 
-    app.SearchBoxController.prototype.setup = function(eventEmmitter){
-        this.eventEmitters = eventEmitter;
+    app.SearchBoxController.prototype.setup = function(eventEmitters){
+        this.eventEmitters = eventEmitters;
         this.view = {};
     };
 
@@ -120,20 +137,19 @@
 
     /***--------- SEARCH RESULTS Controller ------------ ***/
 
-    app.SearchResultsController = function(eventEmmitter){
+    app.SearchResultsController = function(eventEmitters){
 
-        if(!eventEmmitter){
+        if(!eventEmitters){
             return;
         }
-        this.setup(eventEmitter);
+        this.setup(eventEmitters);
         this.setEvents();
     };
 
 
-    app.SearchResultsController.prototype.setup = function(eventEmmitter){
-        this.eventEmitters = eventEmitter;
+    app.SearchResultsController.prototype.setup = function(eventEmitters){
+        this.eventEmitters = eventEmitters;
         this.view = {};
-        this.artistsList = new app.ArtistsList();
     };
 
     app.SearchResultsController.prototype.setEvents = function(){
@@ -141,9 +157,27 @@
     };
 
     app.SearchResultsController.prototype.searchArtist = function(searchTerms){
-        console.log(searchTerms);
+        //this.view.showLoadingText();
+        app.ArtistsList.performSearch(searchTerms).then(this.processSearchResults.bind(this)).fail(function(results, error){
+            console.log('Error');
+            console.log(results);
+            console.log(error);
+        });
+    };
 
-        this.artistsList.performSearch(searchTerms);
+
+    app.SearchResultsController.prototype.processSearchResults = function(artistsList){
+        this.artistsList = artistsList;
+
+        if(!this.artistsList.artists.length || this.artistsList.artists.length === 0){
+            console.log('trigger functionality to show no results');
+        } else {
+            //change the view to output the view
+            console.log('has results');
+        }
+    };
+
+    app.SearchResultsController.prototype.processSearchError = function(){
 
     };
 
@@ -217,13 +251,28 @@
 
     app.SearchResultsView.prototype.setup = function(controller){
         this.controller = controller;
+        this.resultsContentElement = $(app.SearchResultsView.RESULTS_CONTENT_ID);
 
         this.controller.view = this;
+        this.showDefaultText();
     };
+
 
     app.SearchResultsView.prototype.setEvents = function(){
 
     };
+
+    app.SearchResultsView.prototype.showDefaultText = function(){
+        this.resultsContentElement.html(ejs.render($(app.SearchResultsView.DEFAULT_TEXT_ID).html()));
+    };
+
+    app.SearchResultsView.prototype.showLoadingText = function(){
+        this.resultsContentElement.html(ejs.render($(app.SearchResultsView.LOADING_TEXT_ID).html()));
+    };
+
+    app.SearchResultsView.RESULTS_CONTENT_ID = '#results-content';
+    app.SearchResultsView.LOADING_TEXT_ID = '#loading-text';
+    app.SearchResultsView.DEFAULT_TEXT_ID = '#default-text';
 
     /***--------- SEARCH RESULTS VIEW ------------ ***/
 
