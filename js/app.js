@@ -21,20 +21,23 @@
     /***--------- SONG Model ------------ ***/
 
     /***--------- ARTIST Model ------------ ***/
-    app.Artist = function(name, imageUrl){
-        if(!name){
+    app.Artist = function(id, name, imageUrl){
+        if(!name || !id){
             return;
         }
 
-        this.setup(name, imageUrl);
+        this.setup(id, name, imageUrl);
     };
 
-    app.Artist.prototype.setup = function(name, imageUrl){
+    app.Artist.prototype.setup = function(id, name, imageUrl){
+        console.log(imageUrl);
+        this.id = id;
         this.name = name;
         this.imageUrl = imageUrl || 'http://placehold.it/640x643';
         this.biography = '';
         this.genres = [];
         this.songs = [];
+
     };
 
     app.Artist.prototype.addSongs = function(songsJSON){
@@ -42,32 +45,23 @@
             var song = new app.Song(songsJSON[i]);
         }
     };
+
     /***--------- ARTIST Model ------------ ***/
 
 
     /***--------- ARTIST LIST Collection ------------ ***/
     //@todo: Refactor this to use a static function creating a constructor.
     app.ArtistsList = function(items){
+        if(!items){
+            return;
+        }
+
         this.setup(items);
-        this.setEvents();
     };
 
     app.ArtistsList.prototype.setup = function(items){
-        if(!items){
-            this.resetResults();
-        } else {
-            this.artists = items;
-        }
+        this.artists = items;
     };
-
-    app.ArtistsList.prototype.resetResults = function(){
-        this.artists = [];
-    };
-
-    app.ArtistsList.prototype.setEvents = function(){
-
-    };
-
 
     app.ArtistsList.performSearch = function(query){
         return $.get(app.ArtistsList.SEARCH_URL, {q: query, type: app.ArtistsList.ARTIST_PARAMETER_NAME, limit: 1})
@@ -102,7 +96,9 @@
         for(var i = 0; i < artists.length; i ++){
             var relatedArtist = artists[i];
 
-            artistsInstances.push(new app.Artist(relatedArtist.name, relatedArtist.images[0].url));
+            console.log(relatedArtist.images[0].url);
+
+            artistsInstances.push(new app.Artist(relatedArtist.id, relatedArtist.name, relatedArtist.images[0].url));
         }
 
         return new app.ArtistsList(artistsInstances);
@@ -191,9 +187,37 @@
     /***--------- SEARCH RESULTS Controller ------------ ***/
 
 
-    app.ArtistController = function(){
+    /***--------- SEARCH RESULTS Controller ------------ ***/
+
+    app.RelatedArtistController = function(eventEmitters){
+        if(!eventEmitters){
+            return;
+        }
+
+        this.setup(eventEmitters);
+        this.setEvents();
+    };
+
+    app.RelatedArtistController.prototype.setup = function(eventEmitters){
+        this.view = {};
+        this.eventEmitters = eventEmitters;
+    };
+
+
+    app.RelatedArtistController.prototype.setEvents = function(){
+        this.addEventListener('open-related-artist-modal', app.RelatedArtistController.openRelatedArtistModal.bind(null));
+    };
+
+    app.RelatedArtistController.openRelatedArtistModal = function(){
+        //we need to to get a few things...
+        //artist biography
+        //get the songs
 
     };
+
+
+    /***--------- SEARCH RESULTS Controller ------------ ***/
+
 
     /***--------- SEARCH BOX VIEW ------------ ***/
 
@@ -270,13 +294,14 @@
 
 
     app.SearchResultsView.prototype.setEvents = function(){
-        this.resultsContentElement.on('click', '.search-result-item', this.openModal.bind(this));
+        this.resultsContentElement.on('click', app.SearchResultsView.SEARCH_ITEM_BUTTON_CLASS, this.processSearchItemClick.bind(this));
     };
 
-    app.SearchResultsView.prototype.openModal = function(event){
+    app.SearchResultsView.prototype.processSearchItemClick = function(event){
         event.preventDefault();
-
         console.log('Need to create functionality to open a modal window with the artist information');
+        var id = $(event).target();
+
     };
 
     app.SearchResultsView.prototype.showDefaultText = function(){
@@ -296,16 +321,12 @@
             return;
         }
         //keep a variable of the search results.
-        var listElement = ejs.render(this.searchItemsListElement.html());
+        var listElement = $(ejs.render(this.searchItemsListElement.html()));
 
-        console.log('Let Us render all items');
         for(var i = 0; i < results.length; i++){
             var result = results[i];
-
             var listItemElement = ejs.render(this.searchResultItemElement.html(), { artist: result });
-            console.log(listItemElement);
             listElement.append(listItemElement);
-
         }
 
         //add this to the results content
@@ -322,13 +343,23 @@
     app.SearchResultsView.NO_RESULTS_TEXT_ID = '#no-results-text';
     app.SearchResultsView.SEARCH_ITEMS_LIST_ID = '#search-items-list';
     app.SearchResultsView.SEARCH_ITEM_ELEMENT_ID = '#search-result-item';
+    app.SearchResultsView.SEARCH_ITEM_BUTTON_CLASS = '.search-results__item__button'
 
     /***--------- SEARCH RESULTS VIEW ------------ ***/
 
 
     /***--------- ARTIST MODAL VIEW ------------ ***/
-    app.ArtistModalView = function(){
+    app.ArtistModalView = function(controller){
+        if(!controller){
+            return;
+        }
 
+        this.setup(controller);
+    };
+
+    app.ArtistModalView.prototype.setup = function(controller){
+        this.controller = controller;
+        this.controller.view = this;
     };
 
     /***--------- ARTIST MODAL VIEW ------------ ***/
@@ -336,8 +367,6 @@
 
 
     $(document).ready(function(){
-
-
         var eventEmitters = new EventEmitter();
 
         //instantiate all controllers

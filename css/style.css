@@ -907,7 +907,45 @@
         color: #fff;
     }
 
+/* -----------------------------------
+ *
+ * 10. SEARCH RESULT ITEMS
+ *
+ * ----------------------------------- */
 
+.search-results__items {
+
+}
+
+.search-results__item {
+
+}
+
+.search-results__item__button {
+    text-decoration: none !important;
+}
+
+.search-results__item__button:hover {
+    color: #003600;
+}
+
+.search-results__item__image {
+    display: block;
+    margin-bottom: 1.25rem;
+    -webkit-box-shadow: 4px 2px 6px -2px rgba(0,0,0,0.2);
+    -moz-box-shadow: 4px 2px 6px -2px rgba(0,0,0,0.2);
+    box-shadow: 4px 2px 6px -2px rgba(0,0,0,0.2);
+}
+
+.search-results__item__box {
+    -webkit-box-shadow: 5px 10px 10px -2px rgba(0,0,0,0.4);
+    -moz-box-shadow: 5px 10px 10px -2px rgba(0,0,0,0.4);
+    box-shadow: 5px 10px 10px -2px rgba(0,0,0,0.4);
+}
+
+.search-results__item__title {
+
+}
 
 /* -----------------------------------
  *
