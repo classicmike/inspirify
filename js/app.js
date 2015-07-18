@@ -52,13 +52,20 @@
         console.log(url);
 
         $.get(url).done(function(result, error, jQXHR){
-            if(result.status.code !== 0 || status.code.message !== 'Success'){
+            console.log(result);
+
+            var response = result.response;
+
+            if(response.status.code !== 0 || response.status.message !== 'Success'){
                 return $.Deferred().reject(result, 'Error', jQXHR);
             }
+
+            //save and return a boolean to ensure success
 
         });
     };
 
+    app.Artist.POSSIBLE_BIOGRPAHY_SOURCES = [];
     app.Artist.ECHONEST_API_KEY = 'W0SGT7U8YPXFDT6IO';
     app.Artist.BIOGRAPHY_URL = 'http://developer.echonest.com/api/v4/artist/biographies?api_key={YOUR_API_KEY}&id=spotify:artist:{ARTIST_ID}';
 
