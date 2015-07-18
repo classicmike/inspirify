@@ -127,21 +127,21 @@
 
 
     <script id="search-items-list" type="text/ejs">
-        <ul class="search-results__items block-grid-xs-1 block-grid-sm-2 block-grid-md-4">
+        <ul class="search-results__items">
 
         </ul>
     </script>
 
     <script id="search-result-item" type="text/ejs">
-        <li class="search-results__item block-grid-item">
-            <a href="#" class="search-results__item__button">
-                <figure class="well search-results__item__box">
+        <li class="search-results__item" data-artist-id="<%= artist.id %>" role="button">
+            <figure class="well search-results__item__box">
+                <div class="search-results__item__image-wrapper">
                     <img src="<%= artist.imageUrl %>" alt="Click to find out more about <%= artist.name %>" class="img-responsive search-results__item__image" />
-                    <figcaption class="search-results__item__title">
-                        <%= artist.name %>
-                    </figcaption>
-                </figure>
-            </a>
+                </div>
+                <figcaption class="search-results__item__title">
+                    <%= artist.artistName %>
+                </figcaption>
+            </figure>
         </li>
     </script>
 

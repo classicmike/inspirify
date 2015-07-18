@@ -30,9 +30,8 @@
     };
 
     app.Artist.prototype.setup = function(id, name, imageUrl){
-        console.log(imageUrl);
         this.id = id;
-        this.name = name;
+        this.artistName = name;
         this.imageUrl = imageUrl || 'http://placehold.it/640x643';
         this.biography = '';
         this.genres = [];
@@ -45,6 +44,23 @@
             var song = new app.Song(songsJSON[i]);
         }
     };
+
+    app.Artist.prototype.addBiography = function(){
+        var url = app.Artist.BIOGRAPHY_URL.replace('{ARTIST_ID}', this.id);
+        url = url.replace('{YOUR_API_KEY}', app.Artist.ECHONEST_API_KEY);
+
+        console.log(url);
+
+        $.get(url).done(function(result, error, jQXHR){
+            if(result.status.code !== 0 || status.code.message !== 'Success'){
+                return $.Deferred().reject(result, 'Error', jQXHR);
+            }
+
+        });
+    };
+
+    app.Artist.ECHONEST_API_KEY = 'W0SGT7U8YPXFDT6IO';
+    app.Artist.BIOGRAPHY_URL = 'http://developer.echonest.com/api/v4/artist/biographies?api_key={YOUR_API_KEY}&id=spotify:artist:{ARTIST_ID}';
 
     /***--------- ARTIST Model ------------ ***/
 
@@ -95,14 +111,23 @@
         //need to loop through the results and create new instance of the artist.
         for(var i = 0; i < artists.length; i ++){
             var relatedArtist = artists[i];
-
-            console.log(relatedArtist.images[0].url);
-
             artistsInstances.push(new app.Artist(relatedArtist.id, relatedArtist.name, relatedArtist.images[0].url));
         }
 
         return new app.ArtistsList(artistsInstances);
 
+    };
+
+    app.ArtistsList.prototype.getArtistById = function(id){
+        if(!id){
+            return;
+        }
+
+        for(var i = 0; i < this.artists.length; i++){
+            if(this.artists[i].id === id){
+                return this.artists[i];
+            }
+        }
     };
 
     app.ArtistsList.SEARCH_URL = 'https://api.spotify.com/v1/search';
@@ -168,6 +193,8 @@
             .fail(this.processSearchError.bind(this));
     };
 
+
+
     app.SearchResultsController.prototype.processSearchResults = function(artistsList){
         this.artistsList = artistsList;
 
@@ -187,7 +214,7 @@
     /***--------- SEARCH RESULTS Controller ------------ ***/
 
 
-    /***--------- SEARCH RESULTS Controller ------------ ***/
+    /***--------- RELATED ARTIST Controller ------------ ***/
 
     app.RelatedArtistController = function(eventEmitters){
         if(!eventEmitters){
@@ -205,18 +232,35 @@
 
 
     app.RelatedArtistController.prototype.setEvents = function(){
-        this.addEventListener('open-related-artist-modal', app.RelatedArtistController.openRelatedArtistModal.bind(null));
     };
 
-    app.RelatedArtistController.openRelatedArtistModal = function(){
+    app.RelatedArtistController.openModal = function(artistInstance){
+        console.log('open related artist event was fired');
+        console.log(artistInstance);
+
+        if(!artistInstance){
+            console.log('Aparently it is not the type we are looking for');
+            return;
+        }
+        console.log('Should have the correct artist object');
         //we need to to get a few things...
         //artist biography
         //get the songs
+        $.when(
+           //get the artist biography
+            artistInstance.addBiography()
+
+        ).then(
+
+        );
+
 
     };
 
 
-    /***--------- SEARCH RESULTS Controller ------------ ***/
+
+
+    /***--------- RELATED ARTIST Controller ------------ ***/
 
 
     /***--------- SEARCH BOX VIEW ------------ ***/
@@ -294,14 +338,25 @@
 
 
     app.SearchResultsView.prototype.setEvents = function(){
-        this.resultsContentElement.on('click', app.SearchResultsView.SEARCH_ITEM_BUTTON_CLASS, this.processSearchItemClick.bind(this));
+        this.resultsContentElement.on('click', app.SearchResultsView.SEARCH_ITEM_CLASS, this.processSearchItemClick.bind(this));
     };
 
     app.SearchResultsView.prototype.processSearchItemClick = function(event){
         event.preventDefault();
         console.log('Need to create functionality to open a modal window with the artist information');
-        var id = $(event).target();
+        var clickedElement = $(event.target);
 
+        var id;
+        if($(event.target).hasClass(app.SearchResultsView.SEARCH_ITEM_CLASS)){
+            id = clickedElement.data('artist-id');
+        } else {
+            id = clickedElement.parents(app.SearchResultsView.SEARCH_ITEM_CLASS).data('artist-id');
+        }
+
+        var artist = this.controller.artistsList.getArtistById(id);
+        console.log(artist);
+
+        app.RelatedArtistController.openModal(artist);
     };
 
     app.SearchResultsView.prototype.showDefaultText = function(){
@@ -343,7 +398,7 @@
     app.SearchResultsView.NO_RESULTS_TEXT_ID = '#no-results-text';
     app.SearchResultsView.SEARCH_ITEMS_LIST_ID = '#search-items-list';
     app.SearchResultsView.SEARCH_ITEM_ELEMENT_ID = '#search-result-item';
-    app.SearchResultsView.SEARCH_ITEM_BUTTON_CLASS = '.search-results__item__button'
+    app.SearchResultsView.SEARCH_ITEM_CLASS = '.search-results__item';
 
     /***--------- SEARCH RESULTS VIEW ------------ ***/
 
