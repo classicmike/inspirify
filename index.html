@@ -28,16 +28,16 @@
                 </div>
                 <nav>
                     <ul>
-                        <li><a href="#insire-me">Insprire Me</a></li>
-                        <li><a href="#about">About</a></li>
-                        <li><a href="https://classicmike.github.io/portfolio">Need Services?</a></li>
+                        <li><a href="#inspire-me" class="nav-scroll-to">Insprire Me</a></li>
+                        <li><a href="#about" class="nav-scroll-to">About</a></li>
+                        <li><a href="https://classicmike.github.io/portfolio" target="_blank">Need Services?</a></li>
                     </ul>
                 </nav>
             </header>
         </div>
     </div>
 
-    <section class="afeature afeature__search text-center">
+    <section id="inspire-me" class="afeature afeature__search text-center">
         <div class="container">
             <div class="row">
                 <div class="col-xs-12">
@@ -163,12 +163,12 @@
                 <div class="modal-content">
                     <div class="modal-header">
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                        <h3 class="modal-title"><%= artist.name %></h3>
+                        <h3 class="modal-title h2 overrides__no-spacing"><%= artist.name %></h3>
                     </div>
                     <div class="modal-body">
                         <div class="row">
                             <div class="col-xs-12 col-md-9">
-                                <h4>Biography</h4>
+                                <h4 class="h3">Biography</h4>
                                 <% if(artist.biography) { %>
                                     <p><%= artist.biography.text %> (<strong>Source: <%= artist.biography.source %></strong>) <a href="<%= artist.biography.url %>" target="_blank"><em>Click here to read more.</em></a></p>
                                 <% } else { %>
@@ -186,13 +186,37 @@
                         </div>
                         <div class="row">
                             <div class="col-xs-12 columns">
-                                <h4>Top Songs</h4>
+                                <h4 class="h3">Top Songs</h4>
+                                <table class="table-striped table-hover playlist">
+                                    <thead>
+                                        <th class="playlist__cell">Name</th>
+                                        <th class="playlist__cell">Duration</th>
+                                        <th class="playlist__cell">Song Sample</th>
+                                    </thead>
+                                    <tbody>
+                                        <% for(var i = 0; i < artist.songs.length; i++) { %>
+                                            <tr>
+                                                <td class="playlist__cell"><%= artist.songs[i].name %></td>
+                                                <td class="playlist__cell"><%= artist.songs[i].duration %></td>
+                                                <td class="playlist__cell playlist__cell__play" data-song-id="<%= artist.songs[i].id %>" aria-role="button"><span class="glyphicon glyphicon-play" aria-hidden="true"></span> Play</td>
+                                            </tr>
+                                        <% } %>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
                 </div><!-- /.modal-content -->
             </div><!-- /.modal-dialog -->
         </div><!-- /.modal -->
+    </script>
+
+    <script id="loading-song" type="text/ejs">
+        <span class="glyphicon glyphicon-hourglass" aria-hidden="true"></span> Loading Song...
+    </script>
+
+    <script id="play-song" type="text/ejs">
+        <span class="glyphicon glyphicon-play" aria-hidden="true"></span> Play
     </script>
 
 

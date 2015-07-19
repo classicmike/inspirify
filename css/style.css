@@ -310,6 +310,10 @@
        float: none !important;
    }
 
+    .overrides__no-spacing {
+        margin-bottom: 0 !important;
+   }
+
 
 /* -----------------------------------
  *
@@ -980,6 +984,22 @@
 .search-results__item__title {
 
 }
+
+/* -----------------------------------
+ *
+ * 10. PLAYLIST
+ *
+ * ----------------------------------- */
+
+    .playlist {
+        width: 100%;
+    }
+
+    .playlist .playlist__cell {
+        padding: 0.5rem;
+        cursor: pointer;
+
+    }
 
 /* -----------------------------------
  *
