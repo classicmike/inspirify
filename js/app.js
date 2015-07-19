@@ -1,20 +1,56 @@
 (function(){
     var app = {};
 
+    /***--------- COUNTRY CONVERTER Helper ------------ ***/
+    app.CountryConverter = {};
+
+    app.CountryConverter.countries = {};
+
+    //preloads the countries on load.
+    app.CountryConverter.init = function(){
+        return $.get('js/countries.json')
+            .then(app.CountryConverter.processCountryResults.bind(null))
+            .fail(app.CountryConverter.processCountryResultsError.bind(null));
+    };
+
+    app.CountryConverter.processCountryResults = function(results, error, jQXHR){
+        app.CountryConverter.countries = results;
+    };
+
+    app.CountryConverter.convertToISOCode = function(countryName){
+        if(!countryName){
+            return;
+        }
+
+        return app.CountryConverter.countries[countryName];
+
+    };
+
+    app.CountryConverter.processCountryResultsError = function(){
+        alert('Unfortunately the country converter list was not able to load. Functionality that relies on this to be working may not properly function');
+    };
+    /***--------- COUNTRY CONVERTER Helper ------------ ***/
+
+
     //possibly required echo nest
     //required spotify
 
     /***--------- SONG Model ------------ ***/
-    app.Song = function(){
+    app.Song = function(id, songUrl, name, duration){
+        if(!id || !songUrl || !name){
+            return;
+        }
 
+        this.setup(id, songUrl, name, duration);
     };
 
-    app.Song.prototype.setup = function(title, duration, songUrl){
-        this.title = title;
-        this.song = duration;
+    app.Song.prototype.setup = function(id, songUrl, name, duration){
+        this.id = id;
+        this.name = name;
+
+        // duration in ms
+        this.duration = duration;
         this.songUrl = songUrl;
-        app.song.id++;
-        this.id = app.song.id;
     };
 
     app.Song.id = 0;
@@ -31,11 +67,12 @@
 
     app.Artist.prototype.setup = function(id, name, imageUrl){
         this.id = id;
-        this.artistName = name;
-        this.imageUrl = imageUrl || 'http://placehold.it/640x643';
+        this.name = name;
+        this.imageUrl = imageUrl || app.Artist.PLACEHOLDER_IMAGE_URL;
         this.biography = '';
         this.genres = [];
         this.songs = [];
+        this.countryOfOrigin = '';
 
     };
 
@@ -46,28 +83,119 @@
     };
 
     app.Artist.prototype.addBiography = function(){
-        var url = app.Artist.BIOGRAPHY_URL.replace('{ARTIST_ID}', this.id);
-        url = url.replace('{YOUR_API_KEY}', app.Artist.ECHONEST_API_KEY);
+        var url = app.Artist.BIOGRAPHY_URL.replace(app.Artist.ARTIST_ID_STRING, this.id);
+        url = url.replace(app.Artist.API_KEY_STRING, app.Artist.ECHONEST_API_KEY);
 
         console.log(url);
 
-        $.get(url).done(function(result, error, jQXHR){
-            console.log(result);
-
-            var response = result.response;
-
-            if(response.status.code !== 0 || response.status.message !== 'Success'){
-                return $.Deferred().reject(result, 'Error', jQXHR);
-            }
-
-            //save and return a boolean to ensure success
-
-        });
+        return $.get(url).then(this.processBiographyResult.bind(this));
     };
 
-    app.Artist.POSSIBLE_BIOGRPAHY_SOURCES = [];
+    app.Artist.prototype.processBiographyResult = function(result, error, jQXHR){
+        console.log(result);
+
+        var response = result.response;
+
+        if(response.status.code !== 0 || response.status.message !== 'Success'){
+            return $.Deferred().reject(result, app.Artist.NO_BIOGRAPHY_ERROR_MESSAGE, jQXHR);
+        }
+
+        //save and return a boolean to ensure success
+        this.getBestBiography(response.biographies);
+
+        return true;
+    };
+
+    //designed to grab the 'most reliable' biography of the artist through some very basic heuristic checking.
+    app.Artist.prototype.getBestBiography = function(biographyResults){
+        acquireBio:
+        for(var i = 0; i < biographyResults.length; i++){
+            for(var j = 0; j < app.Artist.POSSIBLE_BIOGRPAHY_SOURCES.length; j++){
+                if(biographyResults[i].site === app.Artist.POSSIBLE_BIOGRPAHY_SOURCES[j]){
+                    this.biography = biographyResults[i].text;
+                    break acquireBio;
+                }
+
+                if(i === biographyResults.length && j === app.Artist.POSSIBLE_BIOGRPAHY_SOURCES.length && !this.biography) {
+                    this.biography = biographyResults[0].text;
+                }
+            }
+        }
+
+        return;
+    };
+
+
+    app.Artist.prototype.getSongs = function(){
+        return this.retrieveArtistCountry()
+            .then(this.retrieveTopSongs.bind(this));
+    };
+
+    app.Artist.prototype.retrieveTopSongs = function(){
+        //run an ajax call to retrieve songs from the songs list
+        var parameters = { country : this.countryOfOrigin };
+        var topSongsUrl = app.Artist.SPOTIFY_TOP_TRACK_URL.replace(app.Artist.ARTIST_ID_STRING, this.id);
+
+        return $.get(topSongsUrl, parameters)
+            .then(this.processTopSongResults.bind(this));
+
+    };
+
+    app.Artist.prototype.processTopSongResults = function(result, error, jQXHR){
+        var tracks = result.tracks;
+
+        for(var i = 0; i < tracks.length; i++){
+            // loop through the track and create instances of a song object.
+            var track = tracks[i];
+
+            // add the songs to the songs list of the artist.
+            this.songs.push(new app.Song(track.id, track.preview_url, track.name, track.duration_ms));
+        }
+
+
+    };
+
+
+
+    app.Artist.prototype.retrieveArtistCountry = function(){
+        var locationUrl = app.Artist.ECHO_NEST_LOCATION_ENDPOINT_URL.replace(app.Artist.API_KEY_STRING, app.Artist.ECHONEST_API_KEY).replace(app.Artist.ARTIST_ID_STRING, this.id);
+        return $.get(locationUrl)
+            .then(this.processArtistCountry.bind(this));
+    };
+
+    //need to retreive the
+    app.Artist.prototype.processArtistCountry = function(countryResult, error, jQXHR){
+        var country = countryResult.response.artist.artist_location.country;
+
+        if(!country){
+            return $.Deferred().reject(countryResult, app.Artist.NO_COUNTRY_FOUND_MESSAGE, jQXHR);
+        }
+
+        return this.countryOfOrigin = app.CountryConverter.convertToISOCode(country);
+    };
+
+    app.Artist.prototype.getTrackById = function(id){
+        if(!id){
+            return;
+        }
+
+        for(var i = 0; i < this.songs.length; i++){
+            if(this.songs[i].id === id){
+                return this.songs[i];
+            }
+        }
+    };
+
+    app.Artist.POSSIBLE_BIOGRPAHY_SOURCES = ['last.fm', 'wikipedia', 'mtvmusic', 'itunes'];
     app.Artist.ECHONEST_API_KEY = 'W0SGT7U8YPXFDT6IO';
     app.Artist.BIOGRAPHY_URL = 'http://developer.echonest.com/api/v4/artist/biographies?api_key={YOUR_API_KEY}&id=spotify:artist:{ARTIST_ID}';
+    app.Artist.ECHO_NEST_LOCATION_ENDPOINT_URL = 'http://developer.echonest.com/api/v4/artist/profile?api_key={YOUR_API_KEY}&id=spotify:artist:{ARTIST_ID}&bucket=artist_location&format=json';
+    app.Artist.SPOTIFY_TOP_TRACK_URL = 'https://api.spotify.com/v1/artists/{ARTIST_ID}/top-tracks';
+    app.Artist.ARTIST_ID_STRING = '{ARTIST_ID}';
+    app.Artist.API_KEY_STRING = '{YOUR_API_KEY}';
+    app.Artist.NO_COUNTRY_FOUND_MESSAGE = 'No origin country found for artist';
+    app.Artist.NO_BIOGRAPHY_ERROR_MESSAGE = 'No biography found error';
+    app.Artist.PLACEHOLDER_IMAGE_URL = 'http://placehold.it/640x643';
 
     /***--------- ARTIST Model ------------ ***/
 
@@ -111,6 +239,8 @@
         if(!relatedResults || !relatedResults.artists.length){
             return $.Deferred().reject(relatedResults, 'No Results', jQXHR);
         }
+
+        console.log(relatedResults);
 
         var artists = relatedResults.artists;
         var artistsInstances = [];
@@ -192,6 +322,7 @@
 
     app.SearchResultsController.prototype.setEvents = function(){
         this.eventEmitters.addListener('search-artist', this.searchArtist.bind(this));
+        this.eventEmitters.addListener('artist-search-process-error', this.processSearchError.bind(this));
     };
 
     app.SearchResultsController.prototype.searchArtist = function(searchTerms){
@@ -210,12 +341,15 @@
 
     app.SearchResultsController.prototype.processSearchError = function(results, error, JXHR){
         // if no results
-        if(error === 'No Results'){
+        if(error !== 'No Results'){
             this.view.showNoResults();
-        } else {
+        } else if(error === 'error' || error === 'Error'){
             this.view.notifyFatalError();
+        } else {
+            this.view.notifyAppSpecificError(error);
         }
     };
+
 
 
     /***--------- SEARCH RESULTS Controller ------------ ***/
@@ -223,49 +357,58 @@
 
     /***--------- RELATED ARTIST Controller ------------ ***/
 
-    app.RelatedArtistController = function(eventEmitters){
-        if(!eventEmitters){
+    app.RelatedArtistController = function(eventEmitters, artistInstance){
+        console.log(artistInstance);
+        console.log(eventEmitters);
+
+
+        if(!eventEmitters || !artistInstance){
+
+            console.log('Apparently the artist instance or the event emitters were not defined');
             return;
         }
 
-        this.setup(eventEmitters);
+        this.setup(eventEmitters, artistInstance);
         this.setEvents();
     };
 
-    app.RelatedArtistController.prototype.setup = function(eventEmitters){
+    app.RelatedArtistController.prototype.setup = function(eventEmitters, artistInstance){
+        console.log('RealtedArtistController getting the artistInstance');
+        console.log(artistInstance);
         this.view = {};
         this.eventEmitters = eventEmitters;
+        this.artistInstance = artistInstance;
     };
 
+    app.RelatedArtistController.prototype.setEvents = function(){};
 
-    app.RelatedArtistController.prototype.setEvents = function(){
-    };
-
-    app.RelatedArtistController.openModal = function(artistInstance){
-        console.log('open related artist event was fired');
-        console.log(artistInstance);
-
+    app.RelatedArtistController.openModal = function(artistInstance, searchResultsController){
         if(!artistInstance){
-            console.log('Aparently it is not the type we are looking for');
             return;
         }
-        console.log('Should have the correct artist object');
-        //we need to to get a few things...
-        //artist biography
-        //get the songs
         $.when(
            //get the artist biography
-            artistInstance.addBiography()
-
-        ).then(
-
-        );
-
+            artistInstance.addBiography(),
+            artistInstance.getSongs()
+        ).then(app.RelatedArtistController.processOpenModal.bind(null, artistInstance, searchResultsController))
+            .fail(app.RelatedArtistController.processOpenModalError.bind(null, searchResultsController));
 
     };
 
+    app.RelatedArtistController.processOpenModal = function(artistInstance, searchResultsController){
+        console.log('Opening the modal. Check the Artist Instance');
+        console.log(artistInstance);
+        console.log(searchResultsController);
 
+        //create a new instance of the modal controller and its associated view.
+        var modalController = new app.RelatedArtistController(searchResultsController.eventEmitters, artistInstance);
+        modalController.view = new app.RelatedArtistModalView(modalController);
 
+    };
+
+    app.RelatedArtistController.processOpenModalError = function(searchResultsController, result, error, jQXHR){
+        searchResultsController.processSearchError(result, error, jQXHR);
+    };
 
     /***--------- RELATED ARTIST Controller ------------ ***/
 
@@ -363,7 +506,7 @@
         var artist = this.controller.artistsList.getArtistById(id);
         console.log(artist);
 
-        app.RelatedArtistController.openModal(artist);
+        app.RelatedArtistController.openModal(artist, this.controller);
     };
 
     app.SearchResultsView.prototype.showDefaultText = function(){
@@ -399,6 +542,13 @@
         alert('Woops there seems to be a problem during the process with searching for your inspiration. Please try again or if problems persists, please contact me.');
     };
 
+    app.SearchResultsView.prototype.notifyAppSpecificError = function(error){
+        if(!error){
+            app.notifyFatalError();
+        }
+        alert('Whoops, Inspirify has encountered the following errors: ' + error + ' Please try again or if problems persists, please contact me.');
+    };
+
     app.SearchResultsView.RESULTS_CONTENT_ID = '#results-content';
     app.SearchResultsView.LOADING_TEXT_ID = '#loading-text';
     app.SearchResultsView.DEFAULT_TEXT_ID = '#default-text';
@@ -411,33 +561,70 @@
 
 
     /***--------- ARTIST MODAL VIEW ------------ ***/
-    app.ArtistModalView = function(controller){
+    app.RelatedArtistModalView = function(controller){
         if(!controller){
             return;
         }
 
         this.setup(controller);
+        this.setEvents();
+        this.open();
     };
 
-    app.ArtistModalView.prototype.setup = function(controller){
+    app.RelatedArtistModalView.prototype.setup = function(controller){
         this.controller = controller;
         this.controller.view = this;
+        this.bodyElement = $(app.RelatedArtistModalView.BODY_SELECTOR);
+        this.relatedArtistTemplateElement = $(app.RelatedArtistModalView.MODAL_TEMPLATE_ID);
+        this.relatedArtistModalElement = null;
     };
+
+    app.RelatedArtistModalView.prototype.setEvents = function(){
+        this.bodyElement.on('hidden.bs.modal', app.RelatedArtistModalView.MODAL_CLASS, this.destroyInstance.bind(this));
+    };
+
+
+    app.RelatedArtistModalView.prototype.render = function(){
+        var relatedModalHTML = ejs.render(this.relatedArtistTemplateElement.html(), { artist: this.controller.artistInstance });
+        this.bodyElement.append(relatedModalHTML);
+
+        var artistId = this.controller.artistInstance.id;
+        this.relatedArtistModalElement = $('#modal-' + artistId);
+    };
+
+    app.RelatedArtistModalView.prototype.open = function(){
+        this.render();
+
+        this.relatedArtistModalElement.modal('show');
+    };
+
+    //wrote this method to destroy the modal controller and view instances so that it does not take any memory after it is no longer used
+    app.RelatedArtistModalView.prototype.destroyInstance = function(){
+        delete this.controller;
+        delete this;
+    };
+
+    app.RelatedArtistModalView.BODY_SELECTOR = 'body';
+    app.RelatedArtistModalView.MODAL_TEMPLATE_ID = '#related-artist-modal';
+    app.RelatedArtistModalView.MODAL_CLASS = '.related-artist-modal';
+
+
 
     /***--------- ARTIST MODAL VIEW ------------ ***/
 
 
 
     $(document).ready(function(){
-        var eventEmitters = new EventEmitter();
+        app.CountryConverter.init().then(function(){
+            console.log(app.CountryConverter.countries);
+            var eventEmitters = new EventEmitter();
 
-        //instantiate all controllers
-        var searchController = new app.SearchBoxController(eventEmitters);
-        var searchBoxView = new app.SearchBoxView(searchController);
+            //instantiate all controllers
+            var searchController = new app.SearchBoxController(eventEmitters);
+            var searchBoxView = new app.SearchBoxView(searchController);
 
-        var searchResultsController = new app.SearchResultsController(eventEmitters);
-        var searchBoxView = new app.SearchResultsView(searchResultsController);
-
-
+            var searchResultsController = new app.SearchResultsController(eventEmitters);
+            var searchBoxView = new app.SearchResultsView(searchResultsController);
+        });
     });
 })(jQuery);
