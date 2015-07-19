@@ -169,10 +169,24 @@
                         <div class="row">
                             <div class="col-xs-12 col-md-9">
                                 <h4>Biography</h4>
-                                <p><%= artist.biography %></p>
+                                <% if(artist.biography) { %>
+                                    <p><%= artist.biography.text %> (<strong>Source: <%= artist.biography.source %></strong>) <a href="<%= artist.biography.url %>" target="_blank"><em>Click here to read more.</em></a></p>
+                                <% } else { %>
+                                    <p>No biography has been found</p>
+                                <% } %>
                             </div>
                             <div class="col-xs-12 col-md-3">
                                 <img src="<%= artist.imageUrl %>" alt="<%= artist.name %>" class="img-responsive" />
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-12 columns">
+                                <hr />
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-12 columns">
+                                <h4>Top Songs</h4>
                             </div>
                         </div>
                     </div>

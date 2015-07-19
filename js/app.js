@@ -53,8 +53,28 @@
         this.songUrl = songUrl;
     };
 
-    app.Song.id = 0;
     /***--------- SONG Model ------------ ***/
+
+    /***--------- BIOGRAPHY Model ------------ ***/
+    app.Biography = function(text, url, source){
+        console.log(text);
+        console.log(url);
+        console.log(source);
+
+        if(!text || !url || !source){
+            return;
+        }
+
+        this.setup(text, url, source);
+    };
+
+    app.Biography.prototype.setup = function(text, url, source){
+        this.text = text;
+        this.url = url;
+        this.source = source;
+    };
+
+    /***--------- BIOGRAPHY Model ------------ ***/
 
     /***--------- ARTIST Model ------------ ***/
     app.Artist = function(id, name, imageUrl){
@@ -70,7 +90,6 @@
         this.name = name;
         this.imageUrl = imageUrl || app.Artist.PLACEHOLDER_IMAGE_URL;
         this.biography = '';
-        this.genres = [];
         this.songs = [];
         this.countryOfOrigin = '';
 
@@ -109,20 +128,27 @@
     //designed to grab the 'most reliable' biography of the artist through some very basic heuristic checking.
     app.Artist.prototype.getBestBiography = function(biographyResults){
         acquireBio:
-        for(var i = 0; i < biographyResults.length; i++){
-            for(var j = 0; j < app.Artist.POSSIBLE_BIOGRPAHY_SOURCES.length; j++){
-                if(biographyResults[i].site === app.Artist.POSSIBLE_BIOGRPAHY_SOURCES[j]){
-                    this.biography = biographyResults[i].text;
+        for(var i = 0; i < app.Artist.POSSIBLE_BIOGRPAHY_SOURCES.length; i++){
+            for(var j = 0; j < biographyResults.length; j++){
+                if(biographyResults[j].site === app.Artist.POSSIBLE_BIOGRPAHY_SOURCES[i]){
+                    var biographyResult = biographyResults[j];
+                    console.log(biographyResult);
+                    if(!biographyResult.truncated){
+                        var truncatedText = biographyResult.text.substring(0, app.Artist.BIOGRAPHY_TRUNCATE_SIZE) + app.Artist.FILLER_STRING;
+                        this.biography = new app.Biography(truncatedText, biographyResult.url, biographyResult.site);
+                    } else {
+                        this.biography = new app.Biography(biographyResult.text, biographyResult.url, biographyResult.site);
+                    }
                     break acquireBio;
                 }
 
-                if(i === biographyResults.length && j === app.Artist.POSSIBLE_BIOGRPAHY_SOURCES.length && !this.biography) {
-                    this.biography = biographyResults[0].text;
+                if(j === biographyResults.length && i === app.Artist.POSSIBLE_BIOGRPAHY_SOURCES.length && !this.biography) {
+                    this.biography = new app.Biography(biographyResults[0].text, biographyResults[0].url, biographyResults[0].site);
                 }
             }
         }
 
-        return;
+        return true;
     };
 
 
@@ -196,6 +222,8 @@
     app.Artist.NO_COUNTRY_FOUND_MESSAGE = 'No origin country found for artist';
     app.Artist.NO_BIOGRAPHY_ERROR_MESSAGE = 'No biography found error';
     app.Artist.PLACEHOLDER_IMAGE_URL = 'http://placehold.it/640x643';
+    app.Artist.BIOGRAPHY_TRUNCATE_SIZE = 200;
+    app.Artist.FILLER_STRING = '...';
 
     /***--------- ARTIST Model ------------ ***/
 
