@@ -120,13 +120,6 @@
         this.biography = '';
         this.songs = [];
         this.countryOfOrigin = '';
-
-    };
-
-    app.Artist.prototype.addSongs = function(songsJSON){
-        for(var i = 0; i < songsJSON.length; i++){
-            var song = new app.Song(songsJSON[i]);
-        }
     };
 
     app.Artist.prototype.addBiography = function(){
@@ -152,27 +145,29 @@
 
     //designed to grab the 'most reliable' biography of the artist through some very basic heuristic checking.
     app.Artist.prototype.getBestBiography = function(biographyResults){
-        acquireBio:
+        //label designed to break out of a double loop
         for(var i = 0; i < app.Artist.POSSIBLE_BIOGRPAHY_SOURCES.length; i++){
             for(var j = 0; j < biographyResults.length; j++){
-                if(biographyResults[j].site === app.Artist.POSSIBLE_BIOGRPAHY_SOURCES[i]){
-                    var biographyResult = biographyResults[j];
-                    if(!biographyResult.truncated){
-                        var truncatedText = biographyResult.text.substring(0, app.Artist.BIOGRAPHY_TRUNCATE_SIZE) + app.Artist.FILLER_STRING;
-                        this.biography = new app.Biography(truncatedText, biographyResult.url, biographyResult.site);
-                    } else {
-                        this.biography = new app.Biography(biographyResult.text, biographyResult.url, biographyResult.site);
-                    }
-                    break acquireBio;
+
+                if(biographyResults[j].site !== app.Artist.POSSIBLE_BIOGRPAHY_SOURCES[i]){
+                    continue; //breaks and continue
                 }
 
-                if(j === biographyResults.length && i === app.Artist.POSSIBLE_BIOGRPAHY_SOURCES.length && !this.biography) {
-                    this.biography = new app.Biography(biographyResults[0].text, biographyResults[0].url, biographyResults[0].site);
+                var biographyResult = biographyResults[j];
+
+                if(!biographyResult.truncated){
+                    var truncatedText = biographyResult.text.substring(0, app.Artist.BIOGRAPHY_TRUNCATE_SIZE) + app.Artist.FILLER_STRING;
+                    this.biography = new app.Biography(truncatedText, biographyResult.url, biographyResult.site);
+                } else {
+                    this.biography = new app.Biography(biographyResult.text, biographyResult.url, biographyResult.site);
                 }
+                return;
+
             }
         }
 
-        return true;
+        //default case for biography results
+        this.biography = new app.Biography(biographyResults[0].text, biographyResults[0].url, biographyResults[0].site);
     };
 
 
@@ -221,7 +216,7 @@
             return $.Deferred().reject(countryResult, app.Artist.NO_COUNTRY_FOUND_MESSAGE, jQXHR);
         }
 
-        return this.countryOfOrigin = app.CountryConverter.convertToISOCode(country);
+        this.countryOfOrigin = app.CountryConverter.convertToISOCode(country);
     };
 
     app.Artist.prototype.getSongById = function(id){
@@ -377,6 +372,8 @@
 
     app.SearchResultsController.prototype.setEvents = function(){
         this.eventEmitters.addListener('search-artist', this.searchArtist.bind(this));
+
+        //comeback
         this.eventEmitters.addListener('artist-search-process-error', this.processSearchError.bind(this));
     };
 
@@ -395,6 +392,8 @@
         this.view.showResults(this.artistsList.artists);
     };
 
+
+    // come back
     app.SearchResultsController.prototype.processSearchError = function(results, error, JXHR){
         // if no results
         if(error !== 'No Results'){
@@ -435,6 +434,8 @@
         if(!artistInstance){
             return;
         }
+
+        //equivalent to promise.all
         $.when(
            //get the artist biography
             artistInstance.addBiography(),
@@ -451,6 +452,7 @@
 
     };
 
+    //comeback
     app.RelatedArtistController.processOpenModalError = function(searchResultsController, result, error, jQXHR){
         searchResultsController.processSearchError(result, error, jQXHR);
     };
@@ -465,31 +467,39 @@
 
         //load audio
         if(this.playingSong){
-            this.playingSong.pause();
-            this.playingSong.currentTime = 0;
+            this.stopSong();
         }
-
-        //load the song via ajax
-        $.get(songInstance.songUrl).then(this.processSongSuccess.bind(this, songInstance))
-            .fail(this.processSongError.bind(this));
-    };
-
-    app.RelatedArtistController.prototype.processSongSuccess = function(songInstance, result, success, jQXHR){
-
-
 
         //get a new instance of the song
         this.playingSong = new Audio(songInstance.songUrl);
+
+        //keeping a attribute with the binding for the showPlayingSongText
+        this.playingSongListener = this.view.showPlaySongText.bind(this);
+        this.playingSong.addEventListener('loadeddata', this.playingSongListener);
+
         this.playingSong.play();
 
-        //remove the loading text.
-        this.view.showPlaySongText();
-
     };
 
-    app.RelatedArtistController.prototype.processSongError = function(result, error, jQXHR){
-        this.view.notifySongLoadingError();
+    app.RelatedArtistController.prototype.stopSong = function(){
+        if(!this.playingSong){
+            return;
+        }
+
+        this.playingSong.pause();
+        this.playingSong.currentTime = 0;
     };
+
+    app.RelatedArtistController.prototype.destroy = function(){
+        if(!this.playingSong){
+            return;
+        }
+
+        this.playingSong.removeEventListener('loadeddata', this.playingSongListener);
+    };
+
+
+
 
     /***--------- RELATED ARTIST Controller ------------ ***/
 
@@ -666,8 +676,14 @@
     };
 
     app.RelatedArtistModalView.prototype.setEvents = function(){
-        this.bodyElement.on('hidden.bs.modal', app.RelatedArtistModalView.MODAL_CLASS, this.destroyInstance.bind(this))
-            .on('click', app.RelatedArtistModalView.PLAY_CLICK_CELL_CLASS, this.playSongClicked.bind(this));
+
+        //destroying the instance
+        this.destroyInstanceListener = this.destroyInstance.bind(this);
+        this.playSongClickedListener = this.playSongClicked.bind(this);
+
+        //the first event hooks onto bootstraps closed modal event then proceeds to destroy the modal view and its associated controller
+        this.bodyElement.on('hidden.bs.modal', app.RelatedArtistModalView.MODAL_CLASS, this.destroyInstanceListener)
+            .on('click', app.RelatedArtistModalView.PLAY_CLICK_CELL_CLASS, this.playSongClickedListener);
     };
 
 
@@ -710,8 +726,16 @@
     //wrote this method to destroy the modal controller and view instances so that it does not take any memory after it is no longer used
     app.RelatedArtistModalView.prototype.destroyInstance = function(){
         this.relatedArtistModalElement.remove();
-        delete this.controller;
-        delete this;
+
+        //stop the song
+        this.controller.stopSong();
+
+        //destroy the controller instance
+        this.controller.destroy();
+
+        //destroy the instance of the song
+        this.bodyElement.off('hidden.bs.modal', app.RelatedArtistModalView.MODAL_CLASS, this.destroyInstanceListener)
+            .off('click', app.RelatedArtistModalView.PLAY_CLICK_CELL_CLASS, this.playSongClickedListener);
     };
 
 
