@@ -183,11 +183,14 @@
 
         return $.get(topSongsUrl, parameters)
             .then(this.processTopSongResults.bind(this));
-
     };
 
     app.Artist.prototype.processTopSongResults = function(result, error, jQXHR){
         var tracks = result.tracks;
+
+        console.log(error);
+        console.log(jQXHR);
+
 
         for(var i = 0; i < tracks.length; i++){
             // loop through the track and create instances of a song object.
@@ -435,6 +438,9 @@
             return;
         }
 
+        //emit to show loading spinner
+        searchResultsController.eventEmitters.emitEvent('show-loading-spinner');
+
         //equivalent to promise.all
         $.when(
            //get the artist biography
@@ -446,6 +452,10 @@
     };
 
     app.RelatedArtistController.processOpenModal = function(artistInstance, searchResultsController){
+
+        //emit to show loading spinner
+        searchResultsController.eventEmitters.emitEvent('hide-loading-spinner');
+
         //create a new instance of the modal controller and its associated view.
         var modalController = new app.RelatedArtistController(searchResultsController.eventEmitters, artistInstance);
         modalController.view = new app.RelatedArtistModalView(modalController);
@@ -454,6 +464,9 @@
 
     //comeback
     app.RelatedArtistController.processOpenModalError = function(searchResultsController, result, error, jQXHR){
+        //emit to show loading spinner
+        searchResultsController.eventEmitters.emitEvent('hide-loading-spinner');
+
         searchResultsController.processSearchError(result, error, jQXHR);
     };
 
@@ -676,7 +689,7 @@
     };
 
     app.RelatedArtistModalView.prototype.setEvents = function(){
-
+        console.log(this.bodyElement);
         //destroying the instance
         this.destroyInstanceListener = this.stopAndDestroyInstance.bind(this);
         this.playSongClickedListener = this.playSongClicked.bind(this);
@@ -687,7 +700,7 @@
     };
 
     //destroys the current instance.
-    app.RelatedArtistController.prototype.destroy = function(){
+    app.RelatedArtistModalView.prototype.destroy = function(){
         //destroy the instance of the song
         this.bodyElement.off('hidden.bs.modal', app.RelatedArtistModalView.MODAL_CLASS, this.destroyInstanceListener)
             .off('click', app.RelatedArtistModalView.PLAY_CLICK_CELL_CLASS, this.playSongClickedListener);
@@ -705,7 +718,7 @@
     app.RelatedArtistModalView.prototype.open = function(){
         this.render();
 
-        this.relatedArtistModalElement.modal('show');
+        console.log(this.relatedArtistModalElement.modal('show'));
     };
 
     app.RelatedArtistModalView.prototype.playSongClicked = function(event){
@@ -732,8 +745,7 @@
 
     //wrote this method to destroy the modal controller and view instances so that it does not take any memory after it is no longer used
     app.RelatedArtistModalView.prototype.stopAndDestroyInstance = function(){
-        this.relatedArtistModalElement.remove();
-
+        console.log(this.bodyElement);
         //stop the song
         this.controller.stopSong();
 
@@ -741,6 +753,7 @@
         this.controller.destroy();
 
         this.destroy();
+        this.relatedArtistModalElement.remove();
     };
 
 
@@ -788,11 +801,46 @@
 
     /***--------- NAVIGATION VIEW ------------ ***/
 
+    /***--------- LOADING MODAL ------------ ***/
+    app.LoadingSpinner = function(eventEmitters){
+        //use if the event emitters have been passed
+        if(eventEmitters){
+            this.eventEmitters = eventEmitters;
+        }
+
+        this.spinnerElement = $(app.LoadingSpinner.SPINNER_ID);
+        this.windowElement = $(app.LoadingSpinner.WINDOW_SELECTOR);
+        this.setEvents();
+    };
+
+    app.LoadingSpinner.prototype.setEvents = function(){
+        //add custom events to open and close
+        this.eventEmitters.addListener('show-loading-spinner', this.open.bind(this));
+        this.eventEmitters.addListener('hide-loading-spinner', this.close.bind(this));
+
+        //on close we need to bind
+        this.windowElement.load(this.close.bind(this));
+    };
+
+    app.LoadingSpinner.prototype.open = function(){
+        this.spinnerElement.addClass('loading-spinner__loading');
+    };
+
+    app.LoadingSpinner.prototype.close = function(){
+        console.log('Closing spinner');
+        this.spinnerElement.removeClass('loading-spinner__loading');
+    };
+
+    app.LoadingSpinner.SPINNER_ID = "#loading-spinner";
+    app.LoadingSpinner.WINDOW_SELECTOR = window;
+    /***--------- LOADING MODAL ------------ ***/
 
 
     $(document).ready(function(){
         app.CountryConverter.init().then(function(){
             var eventEmitters = new EventEmitter();
+
+            var loadingSpinner = new app.LoadingSpinner(eventEmitters);
 
             var navigationView = new app.NavigationView();
 
