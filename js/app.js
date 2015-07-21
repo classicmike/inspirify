@@ -31,7 +31,7 @@
     };
     /***--------- COUNTRY CONVERTER Helper ------------ ***/
 
-    /***--------- TimerConverter Helper ------------ ***/
+    /***--------- TIME CONVERTER Helper ------------ ***/
     app.TimerConverterHelper = {};
 
     app.TimerConverterHelper.convertToMinutesAndSeconds = function(timeInMilliseconds){
@@ -39,7 +39,7 @@
         var seconds = ((timeInMilliseconds % 60000) / 1000).toFixed(0);
         return minutes + ":" + (seconds < 10 ? '0' : '') + seconds;
     };
-    /***--------- TimerConverter Helper ------------ ***/
+    /***--------- TIME CONVERTER Helper ------------ ***/
 
     /***--------- SCROLL TO Helper ------------ ***/
     app.ScrollToHelper = {};
