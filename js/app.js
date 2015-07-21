@@ -474,7 +474,7 @@
         this.playingSong = new Audio(songInstance.songUrl);
 
         //keeping a attribute with the binding for the showPlayingSongText
-        this.playingSongListener = this.view.showPlaySongText.bind(this);
+        this.playingSongListener = this.view.showPlaySongText.bind(this.view);
         this.playingSong.addEventListener('loadeddata', this.playingSongListener);
 
         this.playingSong.play();
@@ -678,12 +678,19 @@
     app.RelatedArtistModalView.prototype.setEvents = function(){
 
         //destroying the instance
-        this.destroyInstanceListener = this.destroyInstance.bind(this);
+        this.destroyInstanceListener = this.stopAndDestroyInstance.bind(this);
         this.playSongClickedListener = this.playSongClicked.bind(this);
 
         //the first event hooks onto bootstraps closed modal event then proceeds to destroy the modal view and its associated controller
         this.bodyElement.on('hidden.bs.modal', app.RelatedArtistModalView.MODAL_CLASS, this.destroyInstanceListener)
             .on('click', app.RelatedArtistModalView.PLAY_CLICK_CELL_CLASS, this.playSongClickedListener);
+    };
+
+    //destroys the current instance.
+    app.RelatedArtistController.prototype.destroy = function(){
+        //destroy the instance of the song
+        this.bodyElement.off('hidden.bs.modal', app.RelatedArtistModalView.MODAL_CLASS, this.destroyInstanceListener)
+            .off('click', app.RelatedArtistModalView.PLAY_CLICK_CELL_CLASS, this.playSongClickedListener);
     };
 
 
@@ -724,7 +731,7 @@
 
 
     //wrote this method to destroy the modal controller and view instances so that it does not take any memory after it is no longer used
-    app.RelatedArtistModalView.prototype.destroyInstance = function(){
+    app.RelatedArtistModalView.prototype.stopAndDestroyInstance = function(){
         this.relatedArtistModalElement.remove();
 
         //stop the song
@@ -733,9 +740,7 @@
         //destroy the controller instance
         this.controller.destroy();
 
-        //destroy the instance of the song
-        this.bodyElement.off('hidden.bs.modal', app.RelatedArtistModalView.MODAL_CLASS, this.destroyInstanceListener)
-            .off('click', app.RelatedArtistModalView.PLAY_CLICK_CELL_CLASS, this.playSongClickedListener);
+        this.destroy();
     };
 
 
