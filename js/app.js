@@ -397,9 +397,9 @@
 
 
     // come back
-    app.SearchResultsController.prototype.processSearchError = function(results, error, JXHR){
+    app.SearchResultsController.prototype.processSearchError = function(results, error, jQXHR){
         // if no results
-        if(error !== 'No Results'){
+        if(error === 'No Results'){
             this.view.showNoResults();
         } else if(error === 'error' || error === 'Error'){
             this.view.notifyFatalError();
@@ -462,13 +462,20 @@
 
     };
 
-    //comeback
-    app.RelatedArtistController.processOpenModalError = function(searchResultsController, result, error, jQXHR){
+    app.RelatedArtistController.processOpenModalError = function(searchResultsController, result, error, status){
         //emit to show loading spinner
         searchResultsController.eventEmitters.emitEvent('hide-loading-spinner');
 
-        searchResultsController.processSearchError(result, error, jQXHR);
+        if(!result.responseJSON.error.message){
+            alert('Unfortunately, Inspirify has encountered an unknown error. Please try again or contact me or if the problem still persists.');
+        } else {
+            alert('Unfortunately, Inspirify has encountered an error: ' + result.responseJSON.error.message + '. Please try again or contact me or if the problem still persists.');
+        }
+
+        return;
+
     };
+
 
     app.RelatedArtistController.prototype.loadAndPlaySong = function(songId){
         if(!songId){
