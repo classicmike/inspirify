@@ -918,10 +918,9 @@
  * ----------------------------------- */
 
 .search-results__items {
-    display: flex;
-    flex-wrap: wrap;
     list-style-type: none;
     padding: 0;
+    margin-left: -1rem;
 }
 
 
@@ -929,28 +928,19 @@
     width: 100%;
     box-sizing: border-box;
     padding-left: 1rem;
-    display: flex;
-    flex-direction: column;
+
 }
 
 
-@media screen and (min-width: 400px) and (max-width: 959px){
+@media screen and (min-width: 400px) and (max-width: 759px){
     .search-results__item {
         width: 50%;
-    }
-
-    .search-results__items > .search-results__item:nth-child(2n + 1) {
-        padding-left: 0;
     }
 }
 
 @media screen and (min-width: 960px){
     .search-results__item {
         width: 25%;
-    }
-
-    .search-results__items > .search-results__item:nth-child(4n + 1)  {
-        padding-left: 0;
     }
 }
 

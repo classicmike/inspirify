@@ -642,6 +642,20 @@
 
         //add this to the results content
         this.resultsContentElement.html(listElement);
+
+        //need to call masonry from here
+        this.initialiseMasonry();
+    };
+
+    app.SearchResultsView.prototype.initialiseMasonry = function(){
+        var searchItemsList = $(app.SearchResultsView.SEARCH_ITEMS_CLASS);
+
+        //fire only when images are loaded.
+        searchItemsList.imagesLoaded(function(){
+            searchItemsList.masonry({
+                itemSelector: app.SearchResultsView.SEARCH_ITEM_CLASS
+            });
+        });
     };
 
     app.SearchResultsView.prototype.notifyFatalError = function(){
@@ -662,7 +676,10 @@
     app.SearchResultsView.SEARCH_ITEMS_LIST_ID = '#search-items-list';
     app.SearchResultsView.SEARCH_ITEM_ELEMENT_ID = '#search-result-item';
     app.SearchResultsView.SEARCH_ITEM_CLASS = '.search-results__item';
+    app.SearchResultsView.SEARCH_ITEMS_CLASS = '.search-results__items';
     app.SearchResultsView.RESULTS_ELEMENT_ID = '#results';
+    app.SearchResultsView.SMALL_MASONRY_BREAKPOINT = 400;
+    app.SearchResultsView.LARGE_MASONRY_BREAKPOINT = 960;
 
     /***--------- SEARCH RESULTS VIEW ------------ ***/
 
@@ -814,6 +831,7 @@
     };
 
     app.LoadingSpinner.prototype.setEvents = function(){
+        console.log('binding the events to trigger the window resize');
         //add custom events to open and close
         this.eventEmitters.addListener('show-loading-spinner', this.open.bind(this));
         this.eventEmitters.addListener('hide-loading-spinner', this.close.bind(this));
@@ -835,21 +853,31 @@
     app.LoadingSpinner.WINDOW_SELECTOR = window;
     /***--------- LOADING MODAL ------------ ***/
 
-
+    console.log('Beggining');
     $(document).ready(function(){
+        console.log('Fire on DOM LOAD');
         app.CountryConverter.init().then(function(){
             var eventEmitters = new EventEmitter();
+            console.log('Instantiated Event Emitters');
 
             var loadingSpinner = new app.LoadingSpinner(eventEmitters);
-
+            console.log('Instantiated Loader Spinner');
             var navigationView = new app.NavigationView();
+            console.log('Instantiated Navigation View');
 
             //instantiate all controllers
             var searchController = new app.SearchBoxController(eventEmitters);
             var searchBoxView = new app.SearchBoxView(searchController);
+            console.log('Instantiated Search Box Controllers and Views');
 
             var searchResultsController = new app.SearchResultsController(eventEmitters);
             var searchBoxView = new app.SearchResultsView(searchResultsController);
+            console.log('Instantiated Search Results Controllers and Views');
+
+
+        }).fail(function(){
+            alert('Something went wrong');
         });
     });
+    console.log('End of JS');
 })(jQuery);
