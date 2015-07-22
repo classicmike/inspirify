@@ -188,10 +188,6 @@
     app.Artist.prototype.processTopSongResults = function(result, error, jQXHR){
         var tracks = result.tracks;
 
-        console.log(error);
-        console.log(jQXHR);
-
-
         for(var i = 0; i < tracks.length; i++){
             // loop through the track and create instances of a song object.
             var track = tracks[i];
@@ -397,7 +393,7 @@
 
 
     // come back
-    app.SearchResultsController.prototype.processSearchError = function(results, error, jQXHR){
+    app.SearchResultsController.prototype.processSearchError = function(error){
         // if no results
         if(error === 'No Results'){
             this.view.showNoResults();
@@ -742,7 +738,7 @@
     app.RelatedArtistModalView.prototype.open = function(){
         this.render();
 
-        console.log(this.relatedArtistModalElement.modal('show'));
+        this.relatedArtistModalElement.modal('show');
     };
 
     app.RelatedArtistModalView.prototype.playSongClicked = function(event){
@@ -769,7 +765,6 @@
 
     //wrote this method to destroy the modal controller and view instances so that it does not take any memory after it is no longer used
     app.RelatedArtistModalView.prototype.stopAndDestroyInstance = function(){
-        console.log(this.bodyElement);
         //stop the song
         this.controller.stopSong();
 
@@ -833,18 +828,20 @@
         }
 
         this.spinnerElement = $(app.LoadingSpinner.SPINNER_ID);
-        this.windowElement = $(app.LoadingSpinner.WINDOW_SELECTOR);
+        this.windowElement = $(window);
         this.setEvents();
     };
 
     app.LoadingSpinner.prototype.setEvents = function(){
-        console.log('binding the events to trigger the window resize');
+        console.log('Set events');
+        console.log(this.windowElement.length);
         //add custom events to open and close
         this.eventEmitters.addListener('show-loading-spinner', this.open.bind(this));
         this.eventEmitters.addListener('hide-loading-spinner', this.close.bind(this));
 
         //on close we need to bind
         this.windowElement.load(this.close.bind(this));
+
     };
 
     app.LoadingSpinner.prototype.open = function(){
@@ -852,7 +849,7 @@
     };
 
     app.LoadingSpinner.prototype.close = function(){
-        console.log('Closing spinner');
+        console.log('Hello');
         this.spinnerElement.removeClass('loading-spinner__loading');
     };
 
@@ -860,31 +857,26 @@
     app.LoadingSpinner.WINDOW_SELECTOR = window;
     /***--------- LOADING MODAL ------------ ***/
 
-    console.log('Beggining');
     $(document).ready(function(){
-        console.log('Fire on DOM LOAD');
-        app.CountryConverter.init().then(function(){
-            var eventEmitters = new EventEmitter();
-            console.log('Instantiated Event Emitters');
+        console.log('DOM Ready');
+        var eventEmitters = new EventEmitter();
+        var loadingSpinner = new app.LoadingSpinner(eventEmitters);
 
-            var loadingSpinner = new app.LoadingSpinner(eventEmitters);
-            console.log('Instantiated Loader Spinner');
+        app.CountryConverter.init().then(function(){
             var navigationView = new app.NavigationView();
-            console.log('Instantiated Navigation View');
 
             //instantiate all controllers
             var searchController = new app.SearchBoxController(eventEmitters);
             var searchBoxView = new app.SearchBoxView(searchController);
-            console.log('Instantiated Search Box Controllers and Views');
 
             var searchResultsController = new app.SearchResultsController(eventEmitters);
             var searchBoxView = new app.SearchResultsView(searchResultsController);
-            console.log('Instantiated Search Results Controllers and Views');
 
 
         }).fail(function(){
             alert('Something went wrong');
         });
     });
-    console.log('End of JS');
+
+    $(window).load(function(){console.log('Complete')});
 })(jQuery);
