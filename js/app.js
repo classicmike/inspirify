@@ -393,7 +393,7 @@
 
 
     // come back
-    app.SearchResultsController.prototype.processSearchError = function(error){
+    app.SearchResultsController.prototype.processSearchError = function(results, error, jQXHR){
         // if no results
         if(error === 'No Results'){
             this.view.showNoResults();
