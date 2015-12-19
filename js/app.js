@@ -849,7 +849,6 @@
     };
 
     app.LoadingSpinner.prototype.close = function(){
-        console.log('Hello');
         this.spinnerElement.removeClass('loading-spinner__loading');
     };
 
@@ -858,7 +857,6 @@
     /***--------- LOADING MODAL ------------ ***/
 
     $(document).ready(function(){
-        console.log('DOM Ready');
         var eventEmitters = new EventEmitter();
         var loadingSpinner = new app.LoadingSpinner(eventEmitters);
 
