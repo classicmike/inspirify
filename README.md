@@ -1,5 +1,4 @@
-# inspirify
-Inspirify for Spotify
+# Inspirify
 
 Sick of listening to the same favourite artists everyday? Inspirify is the app you are looking to find music that suits your tastes. Inspirify searches for artists similar to your favourite artist to give recommendations that will inspire you. Once you have found your inspiration you can click on the artist/band you are interested in and view their biography, as well as listen to a sample of their top songs. All recommendations are provided courtesy of Spotify and me! :)
 
