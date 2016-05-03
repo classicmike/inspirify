@@ -148,7 +148,7 @@
     </script>
 
     <script id="search-result-item" type="text/ejs">
-        <li class="search-results__item" data-artist-id="<%= artist.id %>" role="button" on-click="dataLayer.push({"clickedArtist": "<%= artist.name %>"})">
+        <li class="search-results__item" data-artist-id="<%= artist.id %>" role="button" on-click="dataLayer.push({'clickedArtist': '<%= artist.name %>'})">
             <figure class="well search-results__item__box">
                 <div class="search-results__item__image-wrapper">
                     <img src="<%= artist.imageUrl %>" alt="Click to find out more about <%= artist.name %>" class="img-responsive search-results__item__image" />
